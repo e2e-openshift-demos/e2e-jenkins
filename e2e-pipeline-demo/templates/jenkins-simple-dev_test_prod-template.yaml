@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: jenkins-simple-dev-test-prod-template
+message: |-
+  A Jenkins server will be automatically instantiated in this project to manage
+  the Pipeline BuildConfig created by this template. You will be able to log in to
+  it using your OpenShift user credentials.
+
+  Сервер Jenkins автоматически развернется в этом проекте платформой Openshift, так
+  как в шаблоне присутствует определение BuildConfig с использование Jenkins Pipeline.
+  Вы можете войти в сервер Jenkins, используюя свой логин и пароль для Openshift.
+metadata:
+  annotations:
+    openshift.io/display-name: Jenkins (Ephemeral) Simple Developer-Tester-Operations Chain
+    description: This example showcases a developer-tester-ops chain deployment using a
+      Jenkins pipeline that pauses for approval.
+
+      Этот примет демонстрирует цепочку devloper-tester-ops для Jenkins и процесс утверждения
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins
+  name: simple-dev-test-prod-pipeline
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      name: ${APP_NAME}-dev-test-prod-pipeline
+    name: ${APP_NAME}-dev-test-prod
+  spec:
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          def appName="${APP_NAME}"
+          def verbose="${VERBOSE}"
+          def project=""
+          def project_current=""
+
+          node {
+            project_current = env.PROJECT_NAME
+            project = project_current.substring(0,project_current.indexOf("-cicd"))
+            echo "CI/CD project name is ${project_current}"
+            echo "Project name template ${project}"
+
+            suffix="dev"
+            stage("build-$suffix") {
+              openshiftBuild(namespace: "${project}-${suffix}", buildConfig: appName, showBuildLogs: 'true')
+            }
+
+            stage("deploy-$suffix") {
+              openshiftDeploy(namespace: "${project}-${suffix}", deploymentConfig: appName)
+            }
+
+            stage("approve-next-stage") {
+              sh "oc get route ${appName} -n ${project}-${suffix} -o jsonpath='{ .spec.host }{ .spec.path }' --loglevel=4 > ${suffix}.route"
+              routeHost = readFile("${suffix}.route").trim()
+              input message: "Test deployment: http://${routeHost}. Approve?", id: "approval"
+            }
+
+            suffix="test"
+            stage("build-$suffix") {
+              openshiftBuild(namespace: "${project}-${suffix}", buildConfig: appName, showBuildLogs: 'true')
+            }
+
+            stage("deploy-$suffix") {
+              openshiftDeploy(namespace: "${project}-${suffix}", deploymentConfig: appName)
+              openshiftScale(namespace: "${project}-${suffix}", deploymentConfig: appName, replicaCount: '2')
+            }
+
+            stage("approve-next-stage") {
+              sh "oc get route ${appName} -n ${project}-${suffix} -o jsonpath='{ .spec.host }{ .spec.path }' --loglevel=4 > ${suffix}.route"
+              routeHost = readFile("${suffix}.route").trim()
+              input message: "Test deployment: http://${routeHost}. Approve?", id: "approval"
+              openshiftTag(namespace: "${project}-${suffix}", sourceStream: appName, sourceTag: 'latest', destinationStream: appName, destinationTag: 'promoteProd')
+            }
+
+            suffix="prod"
+            stage("deploy-$suffix") {
+              openshiftDeploy(namespace: "${project}-${suffix}", deploymentConfig: appName)
+              openshiftScale(namespace: "${project}-${suffix}", deploymentConfig: appName, replicaCount: '5')
+            }
+          }
+      type: JenkinsPipeline
+parameters:
+- description: The name assigned to all of the frontend objects defined in this template.
+  displayName: Name
+  name: APP_NAME
+  required: true
+  value: www
+- description: Whether to enable verbose logging of Jenkinsfile steps in pipeline
+  displayName: Verbose
+  name: VERBOSE
+  required: true
+  value: "false"

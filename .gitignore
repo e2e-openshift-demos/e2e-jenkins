@@ -1,0 +1,11 @@
+ca
+ca.*
+macs.sh
+**/*bak?
+**/*.crt
+**/*.csr
+**/*.jceks
+**/*.jks
+**/*.key
+**/*.pem
+**/*.srl
