@@ -1,6 +1,6 @@
 # OpenShift demos
 
-## OpenShift End-to-End Jenkins Pipeline demo with JBoss EAP and PostfreSQL
+## OpenShift End-to-End Jenkins Pipeline demo with JBoss EAP and PostgreSQL
 
 Simple web application demo.
 
