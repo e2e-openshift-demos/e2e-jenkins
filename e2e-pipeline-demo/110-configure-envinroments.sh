@@ -28,7 +28,7 @@ DOMAIN=${DOMAIN:-${DEMO_APPS_DOMAIN}.${OSE30_DOMAIN_NAME}}
 show_env '.*_ENVS\?' '.*_USER' '^DOMAIN' '.*_MIRROR'
 pause
 
-if false ; then
+#if false ; then
 
 oc_login $1
 
@@ -143,9 +143,11 @@ oc_new_app_from_template postgresql-ephemeral -n ${PROJECT_NAME_PREFIX}-prod \
     -p POSTGRESQL_DATABASE=$APP_NAME \
     -p DATABASE_SERVICE_NAME=${APP_NAME}-postgresql
 
-oc_policy add-role-to-group system:image-puller system:serviceaccount:${PROJECT_NAME_PREFIX}-prod -n ${PROJECT_NAME_PREFIX}-test
-
-fi
+cmd="add-role-to-group system:image-puller system:serviceaccount:${PROJECT_NAME_PREFIX}-prod -n ${PROJECT_NAME_PREFIX}-test"
+show_comment "Adding role system:image-puller to all service accounts" "oc $cmd"
+oc_exec_local $cmd
+pause
+#fi
 
 oc_new_app_from_imagestream ${PROJECT_NAME_PREFIX}-test/${APP_NAME}:promoteProd $APP_NAME "" \
     -n ${PROJECT_NAME_PREFIX}-prod \
@@ -175,7 +177,7 @@ oc_exec_local annotate svc/${APP_NAME}-ping \
     "service.alpha.kubernetes.io/tolerate-unready-endpoints=true"
 #    "description=The JGroups ping port for clustering."
 
-#oc_expose_resource dc $APP_NAME -n ${PROJECT_NAME_PREFIX}-prod --port=8080
+oc_expose_resource dc $APP_NAME -n ${PROJECT_NAME_PREFIX}-prod --port=8080
 oc_expose_resource svc $APP_NAME -n ${PROJECT_NAME_PREFIX}-prod --hostname=www-${PROJECT_NAME_PREFIX}.$DOMAIN
 
 #fi
