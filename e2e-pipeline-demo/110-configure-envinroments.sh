@@ -143,7 +143,7 @@ oc_new_app_from_template postgresql-ephemeral -n ${PROJECT_NAME_PREFIX}-prod \
     -p POSTGRESQL_DATABASE=$APP_NAME \
     -p DATABASE_SERVICE_NAME=${APP_NAME}-postgresql
 
-cmd="add-role-to-group system:image-puller system:serviceaccount:${PROJECT_NAME_PREFIX}-prod -n ${PROJECT_NAME_PREFIX}-test"
+cmd="add-role-to-group system:image-puller system:serviceaccounts:${PROJECT_NAME_PREFIX}-prod -n ${PROJECT_NAME_PREFIX}-test"
 show_comment "Adding role system:image-puller to all service accounts" "oc $cmd"
 oc_exec_local $cmd
 pause
