@@ -35,6 +35,7 @@ oc_login $1
 command -v keytool > /dev/null || die "Java keytool utility not found, please install JRE 1.8 or later"
 
 rm -vf tmp/*.jks tmp/*.jceks
+mkdir -p tmp
 
 show_comment "Set Edit permission to 'jenkins' SystemAccount for projects: $ALL_ENVS"
 for p in $ALL_ENVS ; do
