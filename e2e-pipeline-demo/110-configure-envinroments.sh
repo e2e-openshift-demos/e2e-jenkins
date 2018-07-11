@@ -23,7 +23,7 @@ export MAVEN_MIRROR_URL=http://static-content.apps.dsevosty.info/maven/repo
 EAP_SERVICE_ACCOUNT=${APP_NAME}-eap-sa
 EAP_SECRET=${APP_NAME}-eap-secret
 
-DOMAIN=${DOMAIN:-${DEMO_APPS_DOMAIN}.${OSE30_DOMAIN_NAME}}
+export DOMAIN=${DOMAIN:-"<CHANGE-ME!!!>"}
 
 show_env '.*_ENVS\?' '.*_USER' '^DOMAIN' '.*_MIRROR'
 pause
@@ -172,7 +172,7 @@ oc_exec_local -n ${PROJECT_NAME_PREFIX}-prod get dc/${APP_NAME} -o yaml | \
     sed 's/DB_DATABASE_USER$/DB_DATABASE_USERNAME/ ; s/DB_DATABASE_NAME/DB_DATABASE_DATABASE/' | \
     oc_exec_local replace -f -
 
-oc_expose_resource dc $APP_NAME -n ${PROJECT_NAME_PREFIX}-prod --port=8888 --name=${APP_NAME}-ping
+oc_expose_resource dc $APP_NAME -n ${PROJECT_NAME_PREFIX}-prod --port=8888 --name=${APP_NAME}-ping --cluster-ip='None'
 oc_exec_local label svc/${APP_NAME}-ping app=$APP_NAME --overwrite
 oc_exec_local annotate svc/${APP_NAME}-ping \
     "service.alpha.kubernetes.io/tolerate-unready-endpoints=true"
